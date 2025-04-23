@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  auth-service:
+    image: ${REGISTRY:-localhost}/auth-service:${TAG:-latest}
+    build: ./services/auth-service
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - MONGODB_URI=mongodb://mongodb:27017/auth
+    networks:
+      - backend
+    depends_on:
+      - mongodb
+
+  product-service:
+    image: ${REGISTRY:-localhost}/product-service:${TAG:-latest}
+    build: ./services/product-service
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - MONGODB_URI=mongodb://mongodb:27017/products
+    networks:
+      - backend
+    depends_on:
+      - mongodb
+
+  order-service:
+    image: ${REGISTRY:-localhost}/order-service:${TAG:-latest}
+    build: ./services/order-service
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - MONGODB_URI=mongodb://mongodb:27017/orders
+    networks:
+      - backend
+    depends_on:
+      - mongodb
+
+  frontend:
+    image: ${REGISTRY:-localhost}/frontend:${TAG:-latest}
+    build: ./frontend
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    environment:
+      - NODE_ENV=production
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - auth-service
+      - product-service
+      - order-service
+
+  mongodb:
+    image: mongo:4.4
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - backend
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  mongodb_data: 
