@@ -1,4 +1,3 @@
-
 // vite.config.js
 
 import { defineConfig } from 'vite'
@@ -12,14 +11,12 @@ export default defineConfig({
     cors: true,
     proxy: {
       '/api/products': {
-        target: process.env.VITE_PRODUCT_SERVICE_URL || 'http://product-service:3000',
+        target: process.env.VITE_PRODUCT_SERVICE_URL || 'http://product-service:3002',
         changeOrigin: true,
-        
       },
       '/api/cart': {
-        target: process.env.VITE_PRODUCT_SERVICE_URL || 'http://product-service:3000',
+        target: process.env.VITE_PRODUCT_SERVICE_URL || 'http://product-service:3002',
         changeOrigin: true,
-        
       },
       '/api/auth': {
         target: process.env.VITE_AUTH_SERVICE_URL || 'http://auth-service:3001',
@@ -38,9 +35,8 @@ export default defineConfig({
         },
       },
       '/api/orders': {
-        target: process.env.VITE_ORDER_SERVICE_URL || 'http://order-service:3002',
+        target: process.env.VITE_ORDER_SERVICE_URL || 'http://order-service:3003',
         changeOrigin: true,
-        
       }
     }
   }

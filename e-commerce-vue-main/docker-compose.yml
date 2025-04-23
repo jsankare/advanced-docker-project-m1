@@ -40,6 +40,9 @@ services:
       - "8080:8080"
     environment:
       - NODE_ENV=development
+      - VITE_AUTH_SERVICE_URL=http://auth-service:3001
+      - VITE_PRODUCT_SERVICE_URL=http://product-service:3002
+      - VITE_ORDER_SERVICE_URL=http://order-service:3003
     depends_on:
       - auth-service
       - product-service
