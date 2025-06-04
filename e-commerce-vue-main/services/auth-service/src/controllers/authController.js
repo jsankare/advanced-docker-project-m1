@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/user.js';
+import { getJWTSecret } from '../config/database.js';
+
 export const register = async (req, res) => {
     try {
       const { email, password } = req.body;
@@ -38,10 +40,12 @@ export const register = async (req, res) => {
       }
   
       await user.save();
-  
+
+      // Utilisation du secret depuis Docker secrets
+      const jwtSecret = getJWTSecret();
       const token = jwt.sign(
         { userId: user._id, email: user.email },
-        process.env.JWT_SECRET || 'test_secret',
+        jwtSecret,
         { expiresIn: '24h' }
       );
   
@@ -83,10 +87,11 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }
 
-    // Génération du token
+    // Utilisation du secret depuis Docker secrets
+    const jwtSecret = getJWTSecret();
     const token = jwt.sign(
       { userId: user._id, email: user.email },
-      process.env.JWT_SECRET || 'test_secret',
+      jwtSecret,
       { expiresIn: '24h' }
     );
 

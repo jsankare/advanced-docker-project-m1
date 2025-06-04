@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { getJWTSecret } from '../config/database.js';
 
 export const auth = (req, res, next) => {
   try {
@@ -12,7 +13,8 @@ export const auth = (req, res, next) => {
       return res.status(401).json({ message: 'Token malformé' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'efrei_super_pass');
+    const jwtSecret = getJWTSecret();
+    const decoded = jwt.verify(token, jwtSecret);
     req.user = decoded;
     next();
   } catch (error) {
