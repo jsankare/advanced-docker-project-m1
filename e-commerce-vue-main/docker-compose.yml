@@ -18,6 +18,15 @@ services:
     command: npm run dev
     networks:
       - app-network
+    deploy:
+      resources:
+        limits:
+          memory: ${DEV_FRONTEND_MEMORY_LIMIT:-1G}
+          cpus: ${DEV_FRONTEND_CPU_LIMIT:-1.0}
+        reservations:
+          memory: ${DEV_FRONTEND_MEMORY_RESERVATION:-256M}
+          cpus: ${DEV_FRONTEND_CPU_RESERVATION:-0.25}
+    restart: unless-stopped
 
   product-service:
     build:
@@ -37,6 +46,15 @@ services:
       - mongodb
     networks:
       - app-network
+    deploy:
+      resources:
+        limits:
+          memory: ${DEV_SERVICE_MEMORY_LIMIT:-512M}
+          cpus: ${DEV_SERVICE_CPU_LIMIT:-0.5}
+        reservations:
+          memory: ${DEV_SERVICE_MEMORY_RESERVATION:-128M}
+          cpus: ${DEV_SERVICE_CPU_RESERVATION:-0.1}
+    restart: unless-stopped
 
   auth-service:
     build:
@@ -56,6 +74,15 @@ services:
       - mongodb
     networks:
       - app-network
+    deploy:
+      resources:
+        limits:
+          memory: ${DEV_SERVICE_MEMORY_LIMIT:-512M}
+          cpus: ${DEV_SERVICE_CPU_LIMIT:-0.5}
+        reservations:
+          memory: ${DEV_SERVICE_MEMORY_RESERVATION:-128M}
+          cpus: ${DEV_SERVICE_CPU_RESERVATION:-0.1}
+    restart: unless-stopped
 
   order-service:
     build:
@@ -75,6 +102,15 @@ services:
       - mongodb
     networks:
       - app-network
+    deploy:
+      resources:
+        limits:
+          memory: ${DEV_SERVICE_MEMORY_LIMIT:-512M}
+          cpus: ${DEV_SERVICE_CPU_LIMIT:-0.5}
+        reservations:
+          memory: ${DEV_SERVICE_MEMORY_RESERVATION:-128M}
+          cpus: ${DEV_SERVICE_CPU_RESERVATION:-0.1}
+    restart: unless-stopped
 
   mongodb:
     image: mongo:latest
@@ -89,6 +125,15 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/mongodb_root_password
     networks:
       - app-network
+    deploy:
+      resources:
+        limits:
+          memory: ${DEV_MONGO_MEMORY_LIMIT:-1G}
+          cpus: ${DEV_MONGO_CPU_LIMIT:-1.0}
+        reservations:
+          memory: ${DEV_MONGO_MEMORY_RESERVATION:-256M}
+          cpus: ${DEV_MONGO_CPU_RESERVATION:-0.25}
+    restart: unless-stopped
 
   init-products:
     image: curlimages/curl:latest
@@ -101,13 +146,7 @@ services:
       - product-service
     networks:
       - app-network
-
-networks:
-  app-network:
-    driver: bridge
-
-volumes:
-  mongodb_data:
+    restart: "no"
 
 secrets:
   mongodb_root_password:
@@ -120,3 +159,10 @@ secrets:
     file: ./secrets/mongodb_uri_products.txt
   mongodb_uri_orders:
     file: ./secrets/mongodb_uri_orders.txt
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
