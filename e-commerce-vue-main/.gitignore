@@ -24,3 +24,10 @@ package-lock.json
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets de sécurité
+secrets/
+
+# Variables d'environnement sensibles
+.env.local
+.env.*.local
