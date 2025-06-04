@@ -1,59 +1,105 @@
 version: '3.8'
 
 services:
-  auth-service:
-    build: ./services/auth-service
-    ports:
-      - "3001:3001"
-    environment:
-      - NODE_ENV=development
-      - PORT=3001
-      - MONGODB_URI=mongodb://mongodb:27017/auth
-    depends_on:
-      - mongodb
-
-  product-service:
-    build: ./services/product-service
-    ports:
-      - "3002:3002"
-    environment:
-      - NODE_ENV=development
-      - PORT=3002
-      - MONGODB_URI=mongodb://mongodb:27017/products
-    depends_on:
-      - mongodb
-
-  order-service:
-    build: ./services/order-service
-    ports:
-      - "3003:3003"
-    environment:
-      - NODE_ENV=development
-      - PORT=3003
-      - MONGODB_URI=mongodb://mongodb:27017/orders
-    depends_on:
-      - mongodb
-
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      target: build-stage
     ports:
       - "8080:8080"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     environment:
       - NODE_ENV=development
+      - VITE_PRODUCT_SERVICE_URL=http://product-service:3000
       - VITE_AUTH_SERVICE_URL=http://auth-service:3001
-      - VITE_PRODUCT_SERVICE_URL=http://product-service:3002
-      - VITE_ORDER_SERVICE_URL=http://order-service:3003
+      - VITE_ORDER_SERVICE_URL=http://order-service:3002
+    command: npm run dev
+    networks:
+      - app-network
+
+  product-service:
+    build:
+      context: ./services/product-service
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./services/product-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://root:example@mongodb:27017/products?authSource=admin
+      - JWT_SECRET=efrei_super_pass
+    command: npm run dev
     depends_on:
-      - auth-service
-      - product-service
-      - order-service
+      - mongodb
+    networks:
+      - app-network
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+    expose:
+      - "3001"
+    volumes:
+      - ./services/auth-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - JWT_SECRET=efrei_super_pass
+      - MONGODB_URI=mongodb://root:example@mongodb:27017/auth?authSource=admin
+    command: npm run dev
+    depends_on:
+      - mongodb
+    networks:
+      - app-network
+
+  order-service:
+    build:
+      context: ./services/order-service
+    expose:
+      - "3002"
+    volumes:
+      - ./services/order-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - JWT_SECRET=efrei_super_pass
+      - MONGODB_URI=mongodb://root:example@mongodb:27017/orders?authSource=admin
+    command: npm run dev
+    depends_on:
+      - mongodb
+    networks:
+      - app-network
 
   mongodb:
-    image: mongo:4.4
+    image: mongo:latest
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
+    networks:
+      - app-network
+
+  init-products:
+    image: curlimages/curl:latest
+    volumes:
+      - ./scripts:/scripts
+    environment:
+      - JWT_SECRET=efrei_super_pass
+    command: ["sh", "/scripts/init-products.sh"]
+    depends_on:
+      - product-service
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   mongodb_data: 

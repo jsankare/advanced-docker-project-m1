@@ -7,7 +7,7 @@ sleep 10
 # URL du service
 API_URL="http://localhost:3000/api"
 
-# Token d'authentification (à adapter selon votre configuration)
+# Token d'authentification
 TOKEN="efrei_super_pass"
 
 # Fonction pour créer un produit
