@@ -27,10 +27,11 @@ services:
     volumes:
       - ./services/product-service:/app
       - /app/node_modules
+    secrets:
+      - jwt_secret
+      - mongodb_uri_products
     environment:
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://root:example@mongodb:27017/products?authSource=admin
-      - JWT_SECRET=efrei_super_pass
     command: npm run dev
     depends_on:
       - mongodb
@@ -45,10 +46,11 @@ services:
     volumes:
       - ./services/auth-service:/app
       - /app/node_modules
+    secrets:
+      - jwt_secret
+      - mongodb_uri_auth
     environment:
       - NODE_ENV=development
-      - JWT_SECRET=efrei_super_pass
-      - MONGODB_URI=mongodb://root:example@mongodb:27017/auth?authSource=admin
     command: npm run dev
     depends_on:
       - mongodb
@@ -63,10 +65,11 @@ services:
     volumes:
       - ./services/order-service:/app
       - /app/node_modules
+    secrets:
+      - jwt_secret
+      - mongodb_uri_orders
     environment:
       - NODE_ENV=development
-      - JWT_SECRET=efrei_super_pass
-      - MONGODB_URI=mongodb://root:example@mongodb:27017/orders?authSource=admin
     command: npm run dev
     depends_on:
       - mongodb
@@ -79,9 +82,11 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+    secrets:
+      - mongodb_root_password
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=example
+      - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/mongodb_root_password
     networks:
       - app-network
 
@@ -89,8 +94,8 @@ services:
     image: curlimages/curl:latest
     volumes:
       - ./scripts:/scripts
-    environment:
-      - JWT_SECRET=efrei_super_pass
+    secrets:
+      - jwt_secret
     command: ["sh", "/scripts/init-products.sh"]
     depends_on:
       - product-service
@@ -102,4 +107,16 @@ networks:
     driver: bridge
 
 volumes:
-  mongodb_data: 
+  mongodb_data:
+
+secrets:
+  mongodb_root_password:
+    file: ./secrets/mongodb_root_password.txt
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
+  mongodb_uri_auth:
+    file: ./secrets/mongodb_uri_auth.txt
+  mongodb_uri_products:
+    file: ./secrets/mongodb_uri_products.txt
+  mongodb_uri_orders:
+    file: ./secrets/mongodb_uri_orders.txt
