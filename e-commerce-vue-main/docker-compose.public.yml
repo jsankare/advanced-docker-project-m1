@@ -1,11 +1,5 @@
 version: '3.8'
 
-# ========================================
-# DÉPLOIEMENT PUBLIC - E-COMMERCE MICROSERVICES
-# ========================================
-# Utilisation simple : docker-compose -f docker-compose.public.yml up -d
-# AUCUN CODE SOURCE REQUIS - Utilise uniquement les images Docker Hub
-
 services:
   auth-service:
     image: lucasratiaray/ecommerce-auth-service:latest
