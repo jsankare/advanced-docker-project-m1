@@ -38,7 +38,7 @@ mkdir /tmp/test-deploy
 cd /tmp/test-deploy
 
 # Télécharger uniquement le compose (pas de code source)
-curl -O https://github.com/jsankare/advanced-docker-project-m1/blob/feat/bonus/e-commerce-vue-main/docker-compose.prod.yml
+curl -O https://github.com/jsankare/advanced-docker-project-m1/blob/feat/bonus/e-commerce-vue-main/docker-compose.public.yml
 
 # Déployer en une commande
 docker compose -f docker-compose.public.yml up -d
