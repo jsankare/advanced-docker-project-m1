@@ -2,7 +2,7 @@ name: CI/CD Pipeline with Security
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, feat/bonus]
   pull_request:
     branches: [main]
 
