@@ -2,13 +2,15 @@ name: CI/CD Pipeline with Security
 
 on:
   push:
-    branches: [main, develop, ﬂ feat/bonus]
+    branches: [ main, develop, feat/bonus ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
+  workflow_dispatch:
 
 env:
   REGISTRY: docker.io
   IMAGE_PREFIX: ${{ secrets.DOCKER_USERNAME }}
+  WORKING_DIR: e-commerce-vue-main 
 
 jobs:
   # Tests unitaires
@@ -17,25 +19,25 @@ jobs:
     strategy:
       matrix:
         service: [auth-service, product-service, order-service]
-
+    
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
           cache: "npm"
-          cache-dependency-path: services/${{ matrix.service }}/package-lock.json
-
+          cache-dependency-path: ${{ env.WORKING_DIR }}/services/${{ matrix.service }}/package-lock.json
+      
       - name: Install dependencies
         run: |
-          cd services/${{ matrix.service }}
+          cd ${{ env.WORKING_DIR }}/services/${{ matrix.service }}
           npm ci
-
+      
       - name: Run tests for ${{ matrix.service }}
         run: |
-          cd services/${{ matrix.service }}
+          cd ${{ env.WORKING_DIR }}/services/${{ matrix.service }}
           npm test
         env:
           NODE_ENV: test
@@ -45,22 +47,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
           cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
-
+          cache-dependency-path: ${{ env.WORKING_DIR }}/frontend/package-lock.json
+      
       - name: Install frontend dependencies
         run: |
-          cd frontend
+          cd ${{ env.WORKING_DIR }}/frontend
           npm ci
-
+      
       - name: Run frontend tests
         run: |
-          cd frontend
+          cd ${{ env.WORKING_DIR }}/frontend
           npm test
 
   # Build et push des images
@@ -78,16 +80,16 @@ jobs:
             path: services/product-service
           - service: order-service
             path: services/order-service
-
+    
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
+      
       - name: Build and Push ${{ matrix.service }}
         run: |
-          cd ${{ matrix.path }}
+          cd ${{ env.WORKING_DIR }}/${{ matrix.path }}
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/ecommerce-${{ matrix.service }}:${{ github.sha }} .
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/ecommerce-${{ matrix.service }}:latest .
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/ecommerce-${{ matrix.service }}:${{ github.sha }}
@@ -98,15 +100,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Run Trivy vulnerability scanner on code
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: "fs"
-          scan-ref: "."
+          scan-ref: "${{ env.WORKING_DIR }}"
           format: "sarif"
           output: "trivy-code-results.sarif"
-
+      
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
@@ -117,11 +119,11 @@ jobs:
   security-scan-images:
     runs-on: ubuntu-latest
     needs: build-and-push
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/bonus'
     strategy:
       matrix:
         service: [frontend, auth-service, product-service, order-service]
-
+    
     steps:
       - name: Run Trivy vulnerability scanner on Docker images
         uses: aquasecurity/trivy-action@master
@@ -129,13 +131,13 @@ jobs:
           image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/ecommerce-${{ matrix.service }}:latest"
           format: "sarif"
           output: "trivy-${{ matrix.service }}-results.sarif"
-
+      
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: "trivy-${{ matrix.service }}-results.sarif"
-
+      
       - name: Show scan summary for ${{ matrix.service }}
         uses: aquasecurity/trivy-action@master
         with:
