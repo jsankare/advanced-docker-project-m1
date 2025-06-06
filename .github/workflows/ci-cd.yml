@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Job 1: Tests simples
+  # Job 1: Test All Services
   test-all:
     runs-on: ubuntu-latest
     steps:
@@ -87,16 +87,27 @@ jobs:
           echo "📋 Built Docker Images:"
           docker images | grep lucasratiaray
 
-  # Job 3: Push to Docker Hub (si secrets disponibles)
+  # Job 3: Push to Docker Hub
   push-images:
     runs-on: ubuntu-latest
     needs: build-images
-    if: ${{ secrets.DOCKER_USERNAME && secrets.DOCKER_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       
+      - name: Check Docker Hub Secrets
+        run: |
+          if [ -z "${{ secrets.DOCKER_USERNAME }}" ] || [ -z "${{ secrets.DOCKER_PASSWORD }}" ]; then
+            echo "⚠️ Docker Hub secrets not configured"
+            echo "Skipping push to Docker Hub"
+            echo "SKIP_PUSH=true" >> $GITHUB_ENV
+          else
+            echo "✅ Docker Hub secrets found"
+            echo "SKIP_PUSH=false" >> $GITHUB_ENV
+          fi
+      
       - name: Build Images Again (pour push)
+        if: env.SKIP_PUSH == 'false'
         run: |
           cd e-commerce-vue-main/frontend
           docker build -t lucasratiaray/ecommerce-frontend:latest .
@@ -108,9 +119,11 @@ jobs:
           docker build -t lucasratiaray/ecommerce-order-service:latest .
       
       - name: Login to Docker Hub
+        if: env.SKIP_PUSH == 'false'
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
       
       - name: Push Images
+        if: env.SKIP_PUSH == 'false'
         run: |
           echo "🚀 Pushing to Docker Hub..."
           docker push lucasratiaray/ecommerce-frontend:latest
@@ -119,11 +132,18 @@ jobs:
           docker push lucasratiaray/ecommerce-order-service:latest
       
       - name: Push Success
+        if: env.SKIP_PUSH == 'false'
         run: |
           echo "✅ All images pushed to Docker Hub!"
           echo "🔗 Check: https://hub.docker.com/u/lucasratiaray"
+      
+      - name: Push Skipped
+        if: env.SKIP_PUSH == 'true'
+        run: |
+          echo "⚠️ Push to Docker Hub skipped (no secrets configured)"
+          echo "To enable push, configure DOCKER_USERNAME and DOCKER_PASSWORD secrets"
 
-  # Job 4: Security Scan (simple)
+  # Job 4: Security Scan
   security-scan:
     runs-on: ubuntu-latest
     steps:
@@ -147,7 +167,7 @@ jobs:
   # Job 5: Summary
   pipeline-success:
     runs-on: ubuntu-latest
-    needs: [test-all, build-images, security-scan]
+    needs: [test-all, build-images, security-scan, push-images]
     if: always()
     steps:
       - name: Pipeline Summary
@@ -160,11 +180,7 @@ jobs:
           echo "✅ Tests: ALL SERVICES TESTED"
           echo "✅ Build: ALL DOCKER IMAGES BUILT"
           echo "✅ Security: BASIC SCAN COMPLETED"
-          if [[ "${{ secrets.DOCKER_USERNAME }}" ]]; then
-            echo "✅ Push: IMAGES PUSHED TO DOCKER HUB"
-          else
-            echo "⚠️  Push: SKIPPED (no Docker Hub secrets)"
-          fi
+          echo "✅ Push: CHECKED FOR DOCKER HUB SECRETS"
           echo ""
           echo "🚀 Ready for deployment!"
           echo "📦 Images: lucasratiaray/ecommerce-*:latest"
