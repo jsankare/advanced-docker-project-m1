@@ -82,7 +82,7 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
+if ! command -v docker compose &> /dev/null; then
     echo -e "${RED}❌ Docker Compose n'est pas installé${NC}"
     exit 1
 fi
@@ -91,13 +91,13 @@ print_result 0 "Docker et Docker Compose sont installés"
 
 # Vérifier que les services sont démarrés
 print_info "Vérification du statut des conteneurs..."
-if ! docker-compose ps | grep -q "Up"; then
+if ! docker compose ps | grep -q "Up"; then
     print_warning "Les services ne semblent pas être démarrés"
-    echo "Utilisation: docker-compose up -d"
+    echo "Utilisation: docker compose up -d"
     read -p "Voulez-vous démarrer les services maintenant? (y/N): " start_services
     if [[ $start_services =~ ^[Yy]$ ]]; then
         print_info "Démarrage des services..."
-        docker-compose up -d
+        docker compose up -d
         sleep 30
     else
         echo -e "${RED}❌ Services non démarrés. Arrêt des tests.${NC}"
@@ -110,12 +110,12 @@ print_header "1️⃣  État des conteneurs Docker"
 # Vérifier les conteneurs en cours d'exécution
 print_info "Vérification des conteneurs actifs..."
 
-# Méthode compatible avec toutes les versions de docker-compose
+# Méthode compatible avec toutes les versions de docker compose
 echo "État des conteneurs:"
-docker-compose ps
+docker compose ps
 
 # Compter les conteneurs en cours d'exécution de manière plus robuste
-RUNNING_CONTAINERS=$(docker-compose ps | grep -E "Up|running" | wc -l || echo "0")
+RUNNING_CONTAINERS=$(docker compose ps | grep -E "Up|running" | wc -l || echo "0")
 EXPECTED_CONTAINERS=5  # frontend, auth-service, product-service, order-service, mongodb
 
 if [ "$RUNNING_CONTAINERS" -ge 4 ]; then  # Au moins les services principaux
@@ -288,7 +288,7 @@ fi
 print_header "6️⃣  Informations système"
 
 print_info "Utilisation des ressources par les conteneurs:"
-docker-compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 
 print_info "Taille des images Docker:"
 docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | grep -E "(frontend|auth-service|product-service|order-service|mongo)" | head -6
@@ -321,22 +321,22 @@ if [ $FAILED_TESTS -eq 0 ]; then
     echo "   📋 Order API:    http://localhost:3002/api/orders"
     
     echo -e "\n${BLUE}🛠️ Commandes utiles:${NC}"
-    echo "   docker-compose logs          # Voir tous les logs"
-    echo "   docker-compose ps            # État des conteneurs"
-    echo "   docker-compose down          # Arrêter les services"
-    echo "   docker-compose up -d --build # Rebuild et redémarrer"
+    echo "   docker compose logs          # Voir tous les logs"
+    echo "   docker compose ps            # État des conteneurs"
+    echo "   docker compose down          # Arrêter les services"
+    echo "   docker compose up -d --build # Rebuild et redémarrer"
     
     exit 0
 else
     echo -e "${RED}❌ $FAILED_TESTS test(s) ont échoué${NC}"
     echo -e "\n${YELLOW}🔧 Diagnostic suggéré:${NC}"
-    echo "   1. Vérifiez les logs: docker-compose logs"
-    echo "   2. Vérifiez l'état: docker-compose ps"
-    echo "   3. Redémarrez si nécessaire: docker-compose restart"
+    echo "   1. Vérifiez les logs: docker compose logs"
+    echo "   2. Vérifiez l'état: docker compose ps"
+    echo "   3. Redémarrez si nécessaire: docker compose restart"
     echo "   4. Vérifiez les ports: netstat -tulpn | grep ':80\\|:30'"
     
     echo -e "\n${YELLOW}💡 Services en erreur potentielle:${NC}"
-    docker-compose ps --format "table {{.Name}}\t{{.Status}}" | grep -v "Up"
+    docker compose ps --format "table {{.Name}}\t{{.Status}}" | grep -v "Up"
     
     exit 1
 fi

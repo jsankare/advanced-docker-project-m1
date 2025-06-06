@@ -29,5 +29,6 @@ package-lock.json
 secrets/
 
 # Variables d'environnement sensibles
+.env
 .env.local
 .env.*.local
