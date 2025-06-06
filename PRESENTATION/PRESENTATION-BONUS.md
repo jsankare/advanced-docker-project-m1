@@ -44,7 +44,7 @@ curl -O https://github.com/jsankare/advanced-docker-project-m1/blob/feat/bonus/e
 docker compose -f docker-compose.public.yml up -d
 
 # Vérifier que ça marche
-docker compose -f docker-compose.public.yml ps
+docker compose -f docker-compose.publicﬂ.yml ps
 ```
 
 ---
