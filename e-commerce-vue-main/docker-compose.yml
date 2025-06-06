@@ -41,6 +41,8 @@ services:
       - mongodb_uri_products
     environment:
       - NODE_ENV=development
+      - JWT_SECRET=efrei_super_pass
+      - MONGODB_URI=mongodb://root:example@mongodb:27017/ecommerce?authSource=admin
     command: npm run dev
     depends_on:
       - mongodb
@@ -146,6 +148,11 @@ services:
       - product-service
     networks:
       - app-network
+    deploy:
+      resources:
+        limits:
+          memory: ${INIT_MEMORY_LIMIT:-64M}
+          cpus: ${INIT_CPU_LIMIT:-0.1}
     restart: "no"
 
 secrets:
