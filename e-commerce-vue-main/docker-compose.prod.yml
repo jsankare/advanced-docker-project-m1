@@ -2,8 +2,7 @@ version: '3.8'
 
 services:
   auth-service:
-    build: ./services/auth-service
-    image: ${REGISTRY:-docker.io}/${IMAGE_PREFIX:-username}/ecommerce-auth-service:${TAG:-latest}
+    image: lucasratiaray/ecommerce-auth-service:{TAG:-latest}
     deploy:
       replicas: 2
       restart_policy:
@@ -30,8 +29,7 @@ services:
       - mongodb
 
   product-service:
-    build: ./services/product-service
-    image: ${REGISTRY:-docker.io}/${IMAGE_PREFIX:-username}/ecommerce-product-service:${TAG:-latest}
+    image: lucasratiaray/ecommerce-product-service:{TAG:-latest}
     deploy:
       replicas: 2
       restart_policy:
@@ -58,8 +56,7 @@ services:
       - mongodb
 
   order-service:
-    build: ./services/order-service
-    image: ${REGISTRY:-docker.io}/${IMAGE_PREFIX:-username}/ecommerce-order-service:${TAG:-latest}
+    image: lucasratiaray/ecommerce-order-service:${TAG:-latest}
     deploy:
       replicas: 2
       restart_policy:
@@ -86,8 +83,7 @@ services:
       - mongodb
 
   frontend:
-    build: ./frontend
-    image: ${REGISTRY:-docker.io}/${IMAGE_PREFIX:-username}/ecommerce-frontend:${TAG:-latest}
+    image: lucasratiaray/ecommerce-frontend:${TAG:-latest}
     ports:
       - "80:80"
     deploy:
