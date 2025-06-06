@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   auth-service:
-    image: lucasratiaray/ecommerce-auth-service:{TAG:-latest}
+    image: lucasratiaray/ecommerce-auth-service:${TAG:-latest}
     deploy:
       replicas: 2
       restart_policy:
@@ -29,7 +29,7 @@ services:
       - mongodb
 
   product-service:
-    image: lucasratiaray/ecommerce-product-service:{TAG:-latest}
+    image: lucasratiaray/ecommerce-product-service:${TAG:-latest}
     deploy:
       replicas: 2
       restart_policy:
