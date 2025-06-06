@@ -95,16 +95,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Check Docker Hub Secrets
+      - name: Set Docker Hub Credentials
         run: |
-          if [ -z "${{ secrets.DOCKER_USERNAME }}" ] || [ -z "${{ secrets.DOCKER_PASSWORD }}" ]; then
-            echo "⚠️ Docker Hub secrets not configured"
-            echo "Skipping push to Docker Hub"
-            echo "SKIP_PUSH=true" >> $GITHUB_ENV
-          else
-            echo "✅ Docker Hub secrets found"
-            echo "SKIP_PUSH=false" >> $GITHUB_ENV
-          fi
+          echo "DOCKER_USERNAME=lucasratiaray" >> $GITHUB_ENV
+          echo "DOCKER_PASSWORD=iWjjp.3fA!8@2jn" >> $GITHUB_ENV
+          echo "REGISTRY=docker.io" >> $GITHUB_ENV
+          echo "SKIP_PUSH=false" >> $GITHUB_ENV
       
       - name: Build Images Again (pour push)
         if: env.SKIP_PUSH == 'false'
