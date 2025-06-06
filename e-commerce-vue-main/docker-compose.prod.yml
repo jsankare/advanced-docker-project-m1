@@ -1,9 +1,6 @@
-version: '3.8'
-
 services:
   auth-service:
-    image: ${REGISTRY:-localhost}/auth-service:${TAG:-latest}
-    build: ./services/auth-service
+    image: ${REGISTRY:-docker.io}/${IMAGE_PREFIX:-username}/ecommerce-auth:${TAG:-latest}
     deploy:
       replicas: 2
       restart_policy:
@@ -30,8 +27,7 @@ services:
       - mongodb
 
   product-service:
-    image: ${REGISTRY:-localhost}/product-service:${TAG:-latest}
-    build: ./services/product-service
+    image: ${REGISTRY:-docker.io}/${IMAGE_PREFIX:-username}/ecommerce-product:${TAG:-latest}
     deploy:
       replicas: 2
       restart_policy:
@@ -58,8 +54,7 @@ services:
       - mongodb
 
   order-service:
-    image: ${REGISTRY:-localhost}/order-service:${TAG:-latest}
-    build: ./services/order-service
+    image: ${REGISTRY:-docker.io}/${IMAGE_PREFIX:-username}/ecommerce-order:${TAG:-latest}
     deploy:
       replicas: 2
       restart_policy:
@@ -86,8 +81,9 @@ services:
       - mongodb
 
   frontend:
-    image: ${REGISTRY:-localhost}/frontend:${TAG:-latest}
-    build: ./frontend
+    image: ${REGISTRY:-docker.io}/${IMAGE_PREFIX:-username}/ecommerce-frontend:${TAG:-latest}
+    ports:
+      - "80:80"
     deploy:
       replicas: 2
       restart_policy:
@@ -141,6 +137,26 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/mongodb_root_password
     networks:
       - backend
+<<<<<<< HEAD
+=======
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  
+  # Monitoring simple
+  portainer:
+    image: portainer/portainer-ce:latest
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+>>>>>>> 5b8f095 (feat: Add presentation guide for Dockerization of E-Commerce Microservices)
 
 secrets:
   mongodb_root_password:
