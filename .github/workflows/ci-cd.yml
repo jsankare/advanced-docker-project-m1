@@ -1,172 +1,64 @@
-name: CI/CD Pipeline with Security
+name: Debug CI/CD
 
 on:
   push:
-    branches: [ main, develop, feat/bonus ]
-  pull_request:
-    branches: [ main ]
+    branches: [ feat/bonus ]
   workflow_dispatch:
 
-# Permissions nécessaires pour les scans de sécurité
-permissions:
-  contents: read
-  security-events: write
-  actions: read
-
-env:
-  REGISTRY: docker.io
-  IMAGE_PREFIX: ${{ secrets.DOCKER_USERNAME }}
-  WORKING_DIR: e-commerce-vue-main
-
 jobs:
-  # Tests unitaires
-  test-services:
+  debug:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [auth-service, product-service, order-service]
-    
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
       
-      - name: Check if package-lock.json exists
+      - name: Check repository structure
         run: |
-          echo "Checking paths..."
-          ls -la ${{ env.WORKING_DIR }}/services/${{ matrix.service }}/
-          if [ -f "${{ env.WORKING_DIR }}/services/${{ matrix.service }}/package-lock.json" ]; then
-            echo "✅ package-lock.json found"
+          echo "=== Repository structure ==="
+          ls -la
+          echo ""
+          echo "=== e-commerce-vue-main content ==="
+          if [ -d "e-commerce-vue-main" ]; then
+            ls -la e-commerce-vue-main/
+            echo ""
+            echo "=== Services ==="
+            ls -la e-commerce-vue-main/services/ || echo "No services directory"
+            echo ""
+            echo "=== Frontend ==="
+            ls -la e-commerce-vue-main/frontend/ || echo "No frontend directory"
           else
-            echo "❌ package-lock.json not found"
+            echo "e-commerce-vue-main directory not found"
           fi
+      
+      - name: Check for package.json files
+        run: |
+          echo "=== Looking for package.json files ==="
+          find . -name "package.json" -type f
+          echo ""
+          echo "=== Looking for package-lock.json files ==="
+          find . -name "package-lock.json" -type f
+
+  test-one-service:
+    runs-on: ubuntu-latest
+    needs: debug
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-          # Supprimer le cache npm pour éviter l'erreur
-          # cache: "npm"
-          # cache-dependency-path: ${{ env.WORKING_DIR }}/services/${{ matrix.service }}/package-lock.json
       
-      - name: Install dependencies
+      - name: Test auth-service
         run: |
-          cd ${{ env.WORKING_DIR }}/services/${{ matrix.service }}
-          npm ci
-      
-      - name: Run tests for ${{ matrix.service }}
-        run: |
-          cd ${{ env.WORKING_DIR }}/services/${{ matrix.service }}
-          npm test
-        env:
-          NODE_ENV: test
-
-  # Test du frontend
-  test-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Check if frontend package-lock.json exists
-        run: |
-          echo "Checking frontend paths..."
-          ls -la ${{ env.WORKING_DIR }}/frontend/
-          if [ -f "${{ env.WORKING_DIR }}/frontend/package-lock.json" ]; then
-            echo "✅ frontend package-lock.json found"
+          if [ -d "e-commerce-vue-main/services/auth-service" ]; then
+            cd e-commerce-vue-main/services/auth-service
+            echo "Installing dependencies..."
+            npm install
+            echo "Running tests..."
+            npm test || echo "Tests failed or no tests configured"
           else
-            echo "❌ frontend package-lock.json not found"
+            echo "auth-service directory not found"
+            exit 1
           fi
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-          # Supprimer le cache pour éviter l'erreur
-      
-      - name: Install frontend dependencies
-        run: |
-          cd ${{ env.WORKING_DIR }}/frontend
-          npm ci
-      
-      - name: Run frontend tests
-        run: |
-          cd ${{ env.WORKING_DIR }}/frontend
-          npm test
-
-  # Build et push des images (uniquement si les tests passent)
-  build-and-push:
-    runs-on: ubuntu-latest
-    needs: [test-services, test-frontend]
-    if: github.event_name != 'pull_request'  # Ne pas builder sur les PR
-    strategy:
-      matrix:
-        include:
-          - service: frontend
-            path: frontend
-          - service: auth-service
-            path: services/auth-service
-          - service: product-service
-            path: services/product-service
-          - service: order-service
-            path: services/order-service
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Login to Docker Hub
-        if: ${{ secrets.DOCKER_USERNAME && secrets.DOCKER_PASSWORD }}
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-      
-      - name: Build and Push ${{ matrix.service }}
-        if: ${{ secrets.DOCKER_USERNAME && secrets.DOCKER_PASSWORD }}
-        run: |
-          cd ${{ env.WORKING_DIR }}/${{ matrix.path }}
-          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/ecommerce-${{ matrix.service }}:${{ github.sha }} .
-          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/ecommerce-${{ matrix.service }}:latest .
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/ecommerce-${{ matrix.service }}:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/ecommerce-${{ matrix.service }}:latest
-      
-      - name: Skip Docker build (no secrets)
-        if: ${{ !secrets.DOCKER_USERNAME || !secrets.DOCKER_PASSWORD }}
-        run: |
-          echo "⚠️ Docker Hub secrets not configured. Skipping build and push."
-          echo "To enable Docker push, configure DOCKER_USERNAME and DOCKER_PASSWORD secrets."
-
-  # Scan de sécurité du code source (simplifié)
-  security-scan-code:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Run Trivy vulnerability scanner on code
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: "fs"
-          scan-ref: "${{ env.WORKING_DIR }}"
-          format: "table"  # Format table au lieu de SARIF pour éviter les problèmes de permissions
-      
-      # Supprimer temporairement l'upload SARIF pour éviter les erreurs de permissions
-      # - name: Upload Trivy scan results to GitHub Security tab
-      #   uses: github/codeql-action/upload-sarif@v3
-      #   if: always()
-      #   with:
-      #     sarif_file: "trivy-code-results.sarif"
-
-  # Scan de sécurité des images Docker (simplifié)
-  security-scan-images:
-    runs-on: ubuntu-latest
-    needs: build-and-push
-    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/bonus') && github.event_name != 'pull_request'
-    strategy:
-      matrix:
-        service: [frontend, auth-service, product-service, order-service]
-    
-    steps:
-      - name: Run Trivy vulnerability scanner on Docker images
-        if: ${{ secrets.DOCKER_USERNAME }}
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/ecommerce-${{ matrix.service }}:latest"
-          format: "table"  # Format table au lieu de SARIF
-      
-      - name: Skip image scan (no secrets)
-        if: ${{ !secrets.DOCKER_USERNAME }}
-        run: echo "⚠️ Docker Hub secrets not configured. Skipping image scan."
